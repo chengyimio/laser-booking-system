@@ -1,22 +1,41 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import styles from './page.module.css';
 
-export default function AdminSchedulePage() {
-  const router = useRouter();
+// 創建一個包含 useSearchParams 的組件
+function ScheduleForm({ onDateSelected }) {
   const searchParams = useSearchParams();
   const preselectedDate = searchParams.get('date');
   
+  useEffect(() => {
+    if (preselectedDate) {
+      onDateSelected(preselectedDate);
+    }
+  }, [preselectedDate, onDateSelected]);
+  
+  return null;
+}
+
+export default function AdminSchedulePage() {
+  const router = useRouter();
+  const [selectedDate, setSelectedDate] = useState('');
+  
   const [formData, setFormData] = useState({
-    date: preselectedDate || '',
-    role: '', // 'operator' 或 'checker'
+    date: '',
+    role: '',
     name: '',
     phone: '',
     notes: '',
   });
+  
+  useEffect(() => {
+    if (selectedDate) {
+      setFormData(prev => ({ ...prev, date: selectedDate }));
+    }
+  }, [selectedDate]);
   
   // 模擬獲取的可排班日期
   const availableDates = [
@@ -79,6 +98,10 @@ export default function AdminSchedulePage() {
 
   return (
     <div className={styles.container}>
+      <Suspense fallback={null}>
+        <ScheduleForm onDateSelected={setSelectedDate} />
+      </Suspense>
+      
       <main className={styles.main}>
         <h1 className={styles.title}>管理員排班</h1>
         

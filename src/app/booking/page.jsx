@@ -1,23 +1,42 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import styles from './page.module.css';
 
-export default function BookingPage() {
-  const router = useRouter();
+// 創建一個包含 useSearchParams 的組件
+function BookingParamsReader({ onDateSelected }) {
   const searchParams = useSearchParams();
   const preselectedDate = searchParams.get('date');
   
+  useEffect(() => {
+    if (preselectedDate) {
+      onDateSelected(preselectedDate);
+    }
+  }, [preselectedDate, onDateSelected]);
+  
+  return null;
+}
+
+export default function BookingPage() {
+  const router = useRouter();
+  const [selectedDate, setSelectedDate] = useState('');
+  
   const [formData, setFormData] = useState({
-    date: preselectedDate || '',
+    date: '',
     userName: '',
     phone: '',
     email: '',
     purpose: '',
     notes: '',
   });
+  
+  useEffect(() => {
+    if (selectedDate) {
+      setFormData(prev => ({ ...prev, date: selectedDate }));
+    }
+  }, [selectedDate]);
   
   // 模擬從API獲取的數據 - 這些是已排班但尚未被預約的時段
   const [availableSlots, setAvailableSlots] = useState([
@@ -87,6 +106,10 @@ export default function BookingPage() {
 
   return (
     <div className={styles.container}>
+      <Suspense fallback={null}>
+        <BookingParamsReader onDateSelected={setSelectedDate} />
+      </Suspense>
+
       <main className={styles.main}>
         <h1 className={styles.title}>預約雷切機使用</h1>
         
