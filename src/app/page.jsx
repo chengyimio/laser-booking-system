@@ -1,85 +1,106 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './page.module.css';
 
 export default function Home() {
-  // 管理員排班資料 - 在實際應用中,這裡會從API獲取
-  const [schedules, setSchedules] = useState([
-    { 
-      date: '3/10', 
-      operatorName: '陳苡瑄', 
-      operatorConfirmed: false, 
-      checkerName: '林甄彙', 
-      checkerConfirmed: false,
-      userBooked: null // 預約者資訊，null表示尚未被預約
-    },
-    { 
-      date: '3/12', 
-      operatorName: '陳佳儀', 
-      operatorConfirmed: false, 
-      checkerName: '', 
-      checkerConfirmed: false,
-      userBooked: null 
-    },
-    { 
-      date: '3/14', 
-      operatorName: '林俊遑', 
-      operatorConfirmed: false, 
-      checkerName: '', 
-      checkerConfirmed: false,
-      userBooked: '王小明' // 已被預約
-    },
-    { 
-      date: '3/17', 
-      operatorName: '戴婕茵', 
-      operatorConfirmed: false, 
-      checkerName: '趙翊伶', 
-      checkerConfirmed: false,
-      userBooked: null
-    },
-    { 
-      date: '3/19', 
-      operatorName: '張珉甄', 
-      operatorConfirmed: false, 
-      checkerName: '', 
-      checkerConfirmed: false,
-      userBooked: null
-    },
-    { 
-      date: '3/21', 
-      operatorName: '蔡承嶧', 
-      operatorConfirmed: false, 
-      checkerName: '', 
-      checkerConfirmed: false,
-      userBooked: null
-    },
-  ]);
-
-  // 可排班的日期列表 (尚未有管理員排班的日期)
-  const availableDates = [
-    '4/2', '4/7', '4/9', '4/11', '4/14', '4/16', '4/18', '4/21', '4/23', '4/25', '4/28', '4/30',
-    '5/2', '5/5', '5/7', '5/9', '5/12', '5/14', '5/16', '5/19', '5/21', '5/23', '5/26', '5/28', '5/30',
-    '6/2', '6/4', '6/7', '6/9'
-  ];
+  // 管理員排班資料 - 從API獲取
+  const [schedules, setSchedules] = useState([]);
+  const [availableDates, setAvailableDates] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentManager, setCurrentManager] = useState('');
 
-  const toggleConfirm = (index, type) => {
+  // 獲取排班數據
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/bookings');
+        
+        if (!response.ok) {
+          throw new Error('獲取數據失敗');
+        }
+        
+        const data = await response.json();
+        setSchedules(data);
+        
+        // 生成未排班日期列表
+        const bookedDates = new Set(data.map(schedule => schedule.date));
+        const availableDates = [];
+        
+        // 生成接下來2個月的日期
+        const now = new Date();
+        for (let i = 0; i < 60; i++) {
+          const date = new Date(now);
+          date.setDate(now.getDate() + i);
+          
+          // 只考慮未來日期
+          if (date > now) {
+            const formattedDate = `${date.getMonth() + 1}/${date.getDate()}`;
+            
+            // 如果該日期還沒有排班記錄，添加到可用日期列表
+            if (!bookedDates.has(formattedDate)) {
+              availableDates.push(formattedDate);
+            }
+          }
+        }
+        
+        setAvailableDates(availableDates);
+        setError(null);
+      } catch (err) {
+        console.error('獲取數據錯誤:', err);
+        setError('獲取數據時出錯，請刷新頁面重試');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchData();
+  }, []);
+
+  const toggleConfirm = async (index, type) => {
     if (!isAdmin) return;
     
+    const schedule = schedules[index];
     const updatedSchedules = [...schedules];
+    
     if (type === 'operator') {
-      updatedSchedules[index].operatorConfirmed = !updatedSchedules[index].operatorConfirmed;
+      updatedSchedules[index].operatorConfirmed = !schedule.operatorConfirmed;
     } else {
-      updatedSchedules[index].checkerConfirmed = !updatedSchedules[index].checkerConfirmed;
+      updatedSchedules[index].checkerConfirmed = !schedule.checkerConfirmed;
     }
+    
+    // 更新UI
     setSchedules(updatedSchedules);
-
-    // 在實際應用中,這裡會發送API請求更新資料庫
+    
+    // 發送API請求更新資料庫
+    try {
+      const response = await fetch(`/api/bookings?id=${schedule._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          operatorConfirmed: type === 'operator' ? !schedule.operatorConfirmed : schedule.operatorConfirmed,
+          checkerConfirmed: type === 'checker' ? !schedule.checkerConfirmed : schedule.checkerConfirmed,
+        }),
+      });
+      
+      if (!response.ok) {
+        // 如果請求失敗，還原UI狀態
+        alert('更新確認狀態失敗');
+        setSchedules([...schedules]); // 重置為原始狀態
+      }
+    } catch (error) {
+      console.error('更新確認狀態出錯:', error);
+      alert('更新確認狀態時出錯');
+      setSchedules([...schedules]); // 重置為原始狀態
+    }
   };
 
   // 簡易登入功能（在真實應用中會使用更安全的方法）
@@ -89,6 +110,9 @@ export default function Home() {
       setIsLoggedIn(true);
       setIsAdmin(true);
       setCurrentManager(name);
+      
+      // 在真實應用中，這裡會驗證管理員身份
+      localStorage.setItem('admin', name); // 簡單儲存登入狀態
     }
   };
 
@@ -96,7 +120,38 @@ export default function Home() {
     setIsLoggedIn(false);
     setIsAdmin(false);
     setCurrentManager('');
+    localStorage.removeItem('admin');
   };
+  
+  // 檢查之前的登入狀態
+  useEffect(() => {
+    const savedAdmin = localStorage.getItem('admin');
+    if (savedAdmin) {
+      setIsLoggedIn(true);
+      setIsAdmin(true);
+      setCurrentManager(savedAdmin);
+    }
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        <main className={styles.main}>
+          <div className={styles.loading}>載入中...</div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <main className={styles.main}>
+          <div className={styles.error}>{error}</div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -144,7 +199,7 @@ export default function Home() {
             <tbody>
               {/* 已排班時段 */}
               {schedules.map((schedule, index) => (
-                <tr key={`schedule-${index}`} className={!schedule.checkerName ? styles.incompleteRow : ''}>
+                <tr key={`schedule-${schedule._id || index}`} className={!schedule.checkerName ? styles.incompleteRow : ''}>
                   <td>{schedule.date}</td>
                   <td>{schedule.operatorName}</td>
                   <td className={styles.checkboxCell} onClick={() => toggleConfirm(index, 'operator')}>
@@ -160,7 +215,7 @@ export default function Home() {
                   </td>
                   <td>
                     {schedule.userBooked ? (
-                      <span className={styles.bookedTag}>已預約 ({schedule.userBooked})</span>
+                      <span className={styles.bookedTag}>已預約 ({schedule.userBooked.name})</span>
                     ) : !schedule.checkerName ? (
                       <span className={styles.waitingTag}>待安排檢查人員</span>
                     ) : (

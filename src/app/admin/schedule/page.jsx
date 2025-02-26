@@ -79,7 +79,7 @@ export default function AdminSchedulePage() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // 基本表單驗證
@@ -88,12 +88,34 @@ export default function AdminSchedulePage() {
       return;
     }
     
-    // 在實際應用中,這裡會發送API請求儲存排班數據
-    console.log('提交排班:', formData);
-    
-    // 顯示成功訊息並返回首頁
-    alert(`排班成功!\n日期: ${formData.date}\n角色: ${formData.role === 'operator' ? '雷切機管理員' : '環境檢查人員'}\n姓名: ${formData.name}`);
-    router.push('/');
+    try {
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'schedule',
+          date: formData.date,
+          role: formData.role,
+          name: formData.name,
+          phone: formData.phone,
+          notes: formData.notes
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        alert(`排班成功!\n日期: ${formData.date}\n角色: ${formData.role === 'operator' ? '雷切機管理員' : '環境檢查人員'}\n姓名: ${formData.name}`);
+        router.push('/');
+      } else {
+        alert(`排班失敗: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('提交排班錯誤:', error);
+      alert('排班過程中出現錯誤，請稍後再試');
+    }
   };
 
   return (
@@ -166,7 +188,7 @@ export default function AdminSchedulePage() {
               <option 
                 value="checker" 
                 disabled={currentSchedule && currentSchedule.checkerName}
-              >
+              >a
                 環境檢查人員
               </option>
             </select>

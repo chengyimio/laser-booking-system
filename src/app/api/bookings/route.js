@@ -1,151 +1,60 @@
-// 這是一個簡單的API處理預約和排班請求
-// 在實際應用中，這裡會連接到數據庫
+import clientPromise from '@/lib/mongodb';
 
-// 模擬的排班和預約數據 - 實際應用會使用數據庫
-let schedules = [
-  { 
-    id: 1, 
-    date: '3/10', 
-    operatorName: '陳苡瑄', 
-    operatorPhone: '0912345678', 
-    operatorConfirmed: false, 
-    checkerName: '林甄彙', 
-    checkerPhone: '0923456789', 
-    checkerConfirmed: false, 
-    userBooked: null, // 預約者資訊，null表示尚未被預約
-    createdAt: new Date() 
-  },
-  { 
-    id: 2, 
-    date: '3/12', 
-    operatorName: '陳佳儀', 
-    operatorPhone: '0934567890', 
-    operatorConfirmed: false, 
-    checkerName: '張珮玲', 
-    checkerPhone: '0945678901', 
-    checkerConfirmed: false,
-    userBooked: null,
-    createdAt: new Date() 
-  },
-  { 
-    id: 3, 
-    date: '3/14', 
-    operatorName: '林俊遑', 
-    operatorPhone: '0956789012', 
-    operatorConfirmed: false, 
-    checkerName: '', 
-    checkerPhone: '', 
-    checkerConfirmed: false,
-    userBooked: { name: '王小明', phone: '0912345678', email: 'wang@example.com' },
-    createdAt: new Date() 
-  },
-  { 
-    id: 4, 
-    date: '3/17', 
-    operatorName: '戴婕茵', 
-    operatorPhone: '0967890123', 
-    operatorConfirmed: false, 
-    checkerName: '趙翊伶', 
-    checkerPhone: '0978901234', 
-    checkerConfirmed: false,
-    userBooked: null,
-    createdAt: new Date() 
-  },
-  { 
-    id: 5, 
-    date: '3/19', 
-    operatorName: '張珉甄', 
-    operatorPhone: '0989012345', 
-    operatorConfirmed: false, 
-    checkerName: '林芸均', 
-    checkerPhone: '0990123456', 
-    checkerConfirmed: false,
-    userBooked: null,
-    createdAt: new Date() 
-  },
-  { 
-    id: 6, 
-    date: '3/21', 
-    operatorName: '蔡承嶧', 
-    operatorPhone: '0901234567', 
-    operatorConfirmed: false, 
-    checkerName: '陳妍羽', 
-    checkerPhone: '0912345678', 
-    checkerConfirmed: false,
-    userBooked: null,
-    createdAt: new Date() 
-  },
-  {
-    id: 7,
-    date: '4/2',
-    operatorName: '陳苡瑄',
-    operatorPhone: '0912345678',
-    operatorConfirmed: false,
-    checkerName: '',
-    checkerPhone: '',
-    checkerConfirmed: false,
-    userBooked: null,
-    createdAt: new Date()
-  },
-  {
-    id: 8,
-    date: '4/9',
-    operatorName: '',
-    operatorPhone: '',
-    operatorConfirmed: false,
-    checkerName: '林甄彙',
-    checkerPhone: '0923456789',
-    checkerConfirmed: false,
-    userBooked: null,
-    createdAt: new Date()
-  }
-];
-
-// Next.js App Router API路由處理 - 獲取排班
+// GET 請求處理 - 獲取排班
 export async function GET(request) {
-  // 解析URL參數
-  const { searchParams } = new URL(request.url);
-  const date = searchParams.get('date');
-  const available = searchParams.get('available');
-  
-  // 過濾結果
-  let result = [...schedules];
-  
-  // 如果指定日期，返回特定日期的排班
-  if (date) {
-    result = result.filter(schedule => schedule.date === date);
+  try {
+    const { searchParams } = new URL(request.url);
+    const date = searchParams.get('date');
+    const available = searchParams.get('available');
+    
+    const client = await clientPromise;
+    const db = client.db('laser-booking');
+    const schedules = db.collection('schedules');
+    
+    // 構建查詢條件
+    let query = {};
+    if (date) {
+      query.date = date;
+    }
+    
+    // 如果只需要可預約的時段
+    if (available === 'true') {
+      query.operatorName = { $ne: '' };
+      query.checkerName = { $ne: '' };
+      query.userBooked = null;
+    }
+    
+    const result = await schedules.find(query).toArray();
+    return Response.json(result);
+  } catch (error) {
+    console.error('數據庫錯誤:', error);
+    return Response.json({ message: '服務器錯誤' }, { status: 500 });
   }
-  
-  // 如果只需要可預約的時段（有操作員和檢查員且未被預約）
-  if (available === 'true') {
-    result = result.filter(schedule => 
-      schedule.operatorName && 
-      schedule.checkerName && 
-      !schedule.userBooked
-    );
-  }
-  
-  return Response.json(result);
 }
 
-// 新增/更新排班
+// POST 請求處理 - 創建預約或排班
 export async function POST(request) {
-  const body = await request.json();
-  
-  // 檢查是否為預約請求或排班請求
-  const isBookingRequest = body.type === 'booking';
-  
-  if (isBookingRequest) {
-    // 處理預約請求
-    return handleBookingRequest(body);
-  } else {
-    // 處理排班請求
-    return handleScheduleRequest(body);
+  try {
+    const body = await request.json();
+    const isBookingRequest = body.type === 'booking';
+    
+    const client = await clientPromise;
+    const db = client.db('laser-booking');
+    const schedules = db.collection('schedules');
+    
+    if (isBookingRequest) {
+      return handleBookingRequest(body, schedules);
+    } else {
+      return handleScheduleRequest(body, schedules);
+    }
+  } catch (error) {
+    console.error('數據庫錯誤:', error);
+    return Response.json({ message: '服務器錯誤' }, { status: 500 });
   }
 }
 
 // 處理預約請求
-async function handleBookingRequest(data) {
+async function handleBookingRequest(data, schedules) {
   const { date, userName, phone, email, purpose, notes } = data;
   
   // 基本數據驗證
@@ -156,12 +65,15 @@ async function handleBookingRequest(data) {
     );
   }
   
-  // 檢查日期是否存在且可預約
-  const scheduleIndex = schedules.findIndex(
-    s => s.date === date && s.operatorName && s.checkerName && !s.userBooked
-  );
+  // 查找可預約的時段
+  const schedule = await schedules.findOne({
+    date: date,
+    operatorName: { $ne: '' },
+    checkerName: { $ne: '' },
+    userBooked: null
+  });
   
-  if (scheduleIndex === -1) {
+  if (!schedule) {
     return Response.json(
       { message: '該日期不可預約或已被預約' }, 
       { status: 400 }
@@ -169,23 +81,37 @@ async function handleBookingRequest(data) {
   }
   
   // 更新預約信息
-  schedules[scheduleIndex].userBooked = {
-    name: userName,
-    phone,
-    email: email || '',
-    purpose: purpose || '',
-    notes: notes || '',
-    bookedAt: new Date()
-  };
-  
-  return Response.json(
-    { message: '預約成功', schedule: schedules[scheduleIndex] }, 
-    { status: 200 }
+  const result = await schedules.updateOne(
+    { _id: schedule._id },
+    { 
+      $set: { 
+        userBooked: {
+          name: userName,
+          phone,
+          email: email || '',
+          purpose: purpose || '',
+          notes: notes || '',
+          bookedAt: new Date()
+        }
+      } 
+    }
   );
+  
+  if (result.modifiedCount === 1) {
+    return Response.json(
+      { message: '預約成功' }, 
+      { status: 200 }
+    );
+  } else {
+    return Response.json(
+      { message: '預約失敗，請稍後再試' }, 
+      { status: 500 }
+    );
+  }
 }
 
 // 處理排班請求
-async function handleScheduleRequest(data) {
+async function handleScheduleRequest(data, schedules) {
   const { date, role, name, phone, notes } = data;
   
   // 基本數據驗證
@@ -196,13 +122,12 @@ async function handleScheduleRequest(data) {
     );
   }
   
-  // 檢查日期是否已存在排班
-  let scheduleIndex = schedules.findIndex(s => s.date === date);
+  // 查找該日期是否已有排班
+  const existingSchedule = await schedules.findOne({ date });
   
-  if (scheduleIndex === -1) {
+  if (!existingSchedule) {
     // 創建新排班
     const newSchedule = {
-      id: schedules.length + 1,
       date,
       operatorName: role === 'operator' ? name : '',
       operatorPhone: role === 'operator' ? phone || '' : '',
@@ -215,24 +140,29 @@ async function handleScheduleRequest(data) {
       createdAt: new Date()
     };
     
-    schedules.push(newSchedule);
+    const result = await schedules.insertOne(newSchedule);
     
-    return Response.json(
-      { message: '排班創建成功', schedule: newSchedule }, 
-      { status: 201 }
-    );
+    if (result.insertedId) {
+      return Response.json(
+        { message: '排班創建成功', schedule: newSchedule }, 
+        { status: 201 }
+      );
+    } else {
+      return Response.json(
+        { message: '排班創建失敗，請稍後再試' }, 
+        { status: 500 }
+      );
+    }
   } else {
     // 檢查該角色是否已被排班
-    const schedule = schedules[scheduleIndex];
-    
-    if (role === 'operator' && schedule.operatorName) {
+    if (role === 'operator' && existingSchedule.operatorName) {
       return Response.json(
         { message: '此日期的雷切機管理員已排班' }, 
         { status: 400 }
       );
     }
     
-    if (role === 'checker' && schedule.checkerName) {
+    if (role === 'checker' && existingSchedule.checkerName) {
       return Response.json(
         { message: '此日期的環境檢查人員已排班' }, 
         { status: 400 }
@@ -240,69 +170,30 @@ async function handleScheduleRequest(data) {
     }
     
     // 更新排班
+    const update = {};
     if (role === 'operator') {
-      schedules[scheduleIndex].operatorName = name;
-      schedules[scheduleIndex].operatorPhone = phone || '';
+      update.operatorName = name;
+      update.operatorPhone = phone || '';
     } else {
-      schedules[scheduleIndex].checkerName = name;
-      schedules[scheduleIndex].checkerPhone = phone || '';
+      update.checkerName = name;
+      update.checkerPhone = phone || '';
     }
     
-    return Response.json(
-      { message: '排班更新成功', schedule: schedules[scheduleIndex] }, 
-      { status: 200 }
+    const result = await schedules.updateOne(
+      { _id: existingSchedule._id },
+      { $set: update }
     );
+    
+    if (result.modifiedCount === 1) {
+      return Response.json(
+        { message: '排班更新成功' }, 
+        { status: 200 }
+      );
+    } else {
+      return Response.json(
+        { message: '排班更新失敗，請稍後再試' }, 
+        { status: 500 }
+      );
+    }
   }
-}
-
-// 更新排班確認狀態
-export async function PUT(request) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
-  const body = await request.json();
-  
-  // 查找排班
-  const index = schedules.findIndex(schedule => schedule.id === parseInt(id));
-  
-  if (index === -1) {
-    return Response.json(
-      { message: '排班不存在' }, 
-      { status: 404 }
-    );
-  }
-  
-  // 更新排班
-  const updatedSchedule = { ...schedules[index], ...body };
-  schedules[index] = updatedSchedule;
-  
-  return Response.json(updatedSchedule, { status: 200 });
-}
-
-// 刪除排班
-export async function DELETE(request) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
-  
-  // 檢查排班是否存在
-  const index = schedules.findIndex(schedule => schedule.id === parseInt(id));
-  
-  if (index === -1) {
-    return Response.json(
-      { message: '排班不存在' }, 
-      { status: 404 }
-    );
-  }
-  
-  // 檢查是否已有人預約
-  if (schedules[index].userBooked) {
-    return Response.json(
-      { message: '此排班已有人預約，無法刪除' }, 
-      { status: 400 }
-    );
-  }
-  
-  // 從列表中移除
-  schedules.splice(index, 1);
-  
-  return Response.json({ message: '排班已刪除' }, { status: 200 });
 }
