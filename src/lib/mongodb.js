@@ -1,9 +1,11 @@
 import { MongoClient } from 'mongodb';
 
 const uri = process.env.MONGODB_URI;
+// 移除已棄用的選項
 const options = {
-  useUnifiedTopology: true,
-  useNewUrlParser: true,
+  // 不再需要這些選項，它們在MongoDB驅動4.0+中已經默認啟用
+  // useUnifiedTopology: true,
+  // useNewUrlParser: true,
 };
 
 let client;
@@ -14,15 +16,13 @@ if (!process.env.MONGODB_URI) {
 }
 
 if (process.env.NODE_ENV === 'development') {
-  // 在開發模式中使用全局變量，這樣熱重載不會重新建立連接
   if (!global._mongoClientPromise) {
-    client = new MongoClient(uri, options);
+    client = new MongoClient(uri);
     global._mongoClientPromise = client.connect();
   }
   clientPromise = global._mongoClientPromise;
 } else {
-  // 在生產模式中為每個請求創建新的連接
-  client = new MongoClient(uri, options);
+  client = new MongoClient(uri);
   clientPromise = client.connect();
 }
 
