@@ -1,0 +1,251 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: var(--max-width);
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #333;
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  align-items: center;
+}
+
+.welcomeText {
+  font-weight: bold;
+  color: #333;
+}
+
+.bookButton {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: background-color 0.3s;
+}
+
+.bookButton:hover {
+  background-color: var(--primary-dark);
+}
+
+.adminButton {
+  background-color: #e0e0e0;
+  color: #333;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-decoration: none;
+}
+
+.adminButton:hover {
+  background-color: #d0d0d0;
+}
+
+.logoutButton {
+  background-color: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.logoutButton:hover {
+  background-color: #ff5252;
+}
+
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: var(--border-radius);
+}
+
+.bookingTable {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+}
+
+.bookingTable th,
+.bookingTable td {
+  border: 1px solid #e0e0e0;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.bookingTable th {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+.bookingTable tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.bookingTable tr:hover {
+  background-color: #f0f7ff;
+}
+
+.incompleteRow {
+  background-color: #fff4e5 !important;
+}
+
+.availableRow {
+  background-color: #f5f5f5 !important;
+}
+
+.emptyCell {
+  color: #999;
+  font-style: italic;
+}
+
+.checkboxCell {
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #c0c0c0;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  color: white;
+  font-weight: bold;
+}
+
+.checked {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+}
+
+.bookedTag {
+  background-color: #e0e0e0;
+  color: #333;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.waitingTag {
+  background-color: #ffe082;
+  color: #996500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.bookLink {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: background-color 0.3s;
+}
+
+.bookLink:hover {
+  background-color: var(--primary-dark);
+}
+
+.scheduleLink {
+  background-color: #9c27b0;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: background-color 0.3s;
+}
+
+.scheduleLink:hover {
+  background-color: #7b1fa2;
+}
+
+.infoBox {
+  background-color: #f0f7ff;
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.infoBox h3 {
+  margin-top: 0;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+.infoBox ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.infoBox li {
+  margin-bottom: 0.5rem;
+}
+
+.footer {
+  width: 100%;
+  border-top: 1px solid #eaeaea;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 0;
+  background-color: #f9f9f9;
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .actions {
+    margin-top: 1rem;
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
