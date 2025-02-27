@@ -17,11 +17,10 @@ export async function GET(request) {
       query.date = date;
     }
     
-    // 如果只需要可預約的時段
+   // 如果只需要可預約的時段
     if (available === 'true') {
-      query.operatorName = { $ne: '' };
-      query.checkerName = { $ne: '' };
-      query.userBooked = null;
+    query.operatorName = { $ne: '' }; // 只要有雷切機管理員
+    query.userBooked = null;
     }
     
     const result = await schedules.find(query).toArray();
@@ -71,6 +70,7 @@ async function handleBookingRequest(data, schedules) {
       operatorName: { $ne: '' }, // 只需要雷切機管理員
       userBooked: null
     });
+
   
   if (!schedule) {
     return Response.json(
