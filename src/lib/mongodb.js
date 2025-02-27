@@ -1,12 +1,6 @@
 import { MongoClient } from 'mongodb';
 
 const uri = process.env.MONGODB_URI;
-// 移除已棄用的選項
-const options = {
-  // 不再需要這些選項，它們在MongoDB驅動4.0+中已經默認啟用
-  // useUnifiedTopology: true,
-  // useNewUrlParser: true,
-};
 
 let client;
 let clientPromise;
