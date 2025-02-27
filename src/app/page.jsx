@@ -87,20 +87,24 @@ export default function Home() {
   const toggleConfirm = async (index, type) => {
     if (!isAdmin) return;
     
+    // 獲取要更新的排班
     const schedule = schedules[index];
+    
+    // 創建更新後的狀態
     const updatedSchedules = [...schedules];
     
+    // 根據點擊的類型更新本地狀態
     if (type === 'operator') {
       updatedSchedules[index].operatorConfirmed = !schedule.operatorConfirmed;
     } else {
       updatedSchedules[index].checkerConfirmed = !schedule.checkerConfirmed;
     }
     
-    // 更新UI
+    // 立即更新UI（樂觀更新）
     setSchedules(updatedSchedules);
     
-    // 發送API請求更新資料庫
     try {
+      // 發送API請求更新數據庫
       const response = await fetch(`/api/bookings?id=${schedule._id}`, {
         method: 'PUT',
         headers: {
@@ -108,19 +112,30 @@ export default function Home() {
         },
         body: JSON.stringify({
           operatorConfirmed: type === 'operator' ? !schedule.operatorConfirmed : schedule.operatorConfirmed,
-          checkerConfirmed: type === 'checker' ? !schedule.checkerConfirmed : schedule.checkerConfirmed,
+          checkerConfirmed: type === 'checker' ? !schedule.checkerConfirmed : schedule.checkerConfirmed
         }),
       });
       
       if (!response.ok) {
         // 如果請求失敗，還原UI狀態
-        alert('更新確認狀態失敗');
-        setSchedules([...schedules]); // 重置為原始狀態
+        console.error('更新確認狀態失敗');
+        // 還原為原始狀態
+        if (type === 'operator') {
+          updatedSchedules[index].operatorConfirmed = schedule.operatorConfirmed;
+        } else {
+          updatedSchedules[index].checkerConfirmed = schedule.checkerConfirmed;
+        }
+        setSchedules([...updatedSchedules]);
       }
     } catch (error) {
       console.error('更新確認狀態出錯:', error);
-      alert('更新確認狀態時出錯');
-      setSchedules([...schedules]); // 重置為原始狀態
+      // 還原為原始狀態
+      if (type === 'operator') {
+        updatedSchedules[index].operatorConfirmed = schedule.operatorConfirmed;
+      } else {
+        updatedSchedules[index].checkerConfirmed = schedule.checkerConfirmed;
+      }
+      setSchedules([...updatedSchedules]);
     }
   };
 
