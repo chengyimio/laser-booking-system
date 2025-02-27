@@ -182,7 +182,36 @@ export default function Home() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // 準備所有需要更新的數據
+    const updates = schedules.map(schedule => ({
+      id: schedule._id,
+      operatorConfirmed: schedule.operatorConfirmed,
+      checkerConfirmed: schedule.checkerConfirmed
+    }));
+    
+    // 將當前狀態保存到數據庫
+    try {
+      const response = await fetch('/api/bookings/batch-update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      });
+      
+      if (!response.ok) {
+        throw new Error('批量更新失敗');
+      }
+      
+      console.log('所有狀態已成功保存到數據庫');
+      
+    } catch (error) {
+      console.error('保存狀態時出錯:', error);
+      alert('登出前保存狀態失敗，部分變更可能未保存');
+    }
+    
+    // 然後清除登入狀態
     setIsLoggedIn(false);
     setIsAdmin(false);
     setCurrentManager('');
