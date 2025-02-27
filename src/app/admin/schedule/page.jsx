@@ -4,7 +4,9 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import styles from './page.module.css';
-import { ObjectId } from 'mongodb';
+
+// 移除 MongoDB 導入
+// import { ObjectId } from 'mongodb'; // ← 刪除這一行
 
 // 創建一個包含 useSearchParams 的組件
 function ScheduleForm({ onDateSelected, onScheduleIdLoaded }) {
