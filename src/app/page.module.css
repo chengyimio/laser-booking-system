@@ -235,6 +235,36 @@
   padding: 2rem 0;
   background-color: #f9f9f9;
 }
+.actionCell {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.editLink {
+  color: #2196f3;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.deleteButton {
+  color: #f44336;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.customDateToggle {
+  margin-top: 0.5rem;
+  background: none;
+  border: none;
+  color: #2196f3;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
 
 @media (max-width: 768px) {
   .header {

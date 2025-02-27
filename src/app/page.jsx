@@ -62,7 +62,27 @@ export default function Home() {
     
     fetchData();
   }, []);
-
+  const handleDeleteSchedule = async (id) => {
+    if (!confirm('確定要刪除此排班嗎？')) return;
+    
+    try {
+      const response = await fetch(`/api/bookings?id=${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        // 從UI中移除被刪除的排班
+        setSchedules(schedules.filter(schedule => schedule._id !== id));
+        alert('排班已成功刪除');
+      } else {
+        const error = await response.json();
+        alert(`刪除失敗: ${error.message || '未知錯誤'}`);
+      }
+    } catch (error) {
+      console.error('刪除排班錯誤:', error);
+      alert('刪除時發生錯誤');
+    }
+  };
   const toggleConfirm = async (index, type) => {
     if (!isAdmin) return;
     
@@ -186,46 +206,60 @@ export default function Home() {
 
         <div className={styles.tableWrapper}>
           <table className={styles.bookingTable}>
-            <thead>
-              <tr>
-                <th>日期</th>
-                <th>雷切機管理員 (19:00-21:00)</th>
-                <th>確認</th>
-                <th>環境檢查人員</th>
-                <th>確認</th>
-                <th>預約狀態</th>
-              </tr>
-            </thead>
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>雷切機管理員 (19:00-21:00)</th>
+              <th>確認</th>
+              <th>環境檢查人員</th>
+              <th>確認</th>
+              <th>預約狀態</th>
+              {isAdmin && <th>操作</th>}
+            </tr>
+          </thead>
             <tbody>
-              {/* 已排班時段 */}
-              {schedules.map((schedule, index) => (
-                <tr key={`schedule-${schedule._id || index}`} className={!schedule.checkerName ? styles.incompleteRow : ''}>
-                  <td>{schedule.date}</td>
-                  <td>{schedule.operatorName}</td>
-                  <td className={styles.checkboxCell} onClick={() => toggleConfirm(index, 'operator')}>
-                    <div className={`${styles.checkbox} ${schedule.operatorConfirmed ? styles.checked : ''}`}>
-                      {schedule.operatorConfirmed ? '✓' : ''}
-                    </div>
+            {/* 已排班時段 */}
+            {schedules.map((schedule, index) => (
+              <tr key={`schedule-${schedule._id || index}`}>
+                <td>{schedule.date}</td>
+                <td>{schedule.operatorName}</td>
+                <td className={styles.checkboxCell} onClick={() => toggleConfirm(index, 'operator')}>
+                  <div className={`${styles.checkbox} ${schedule.operatorConfirmed ? styles.checked : ''}`}>
+                    {schedule.operatorConfirmed ? '✓' : ''}
+                  </div>
+                </td>
+                <td>{schedule.checkerName || '尚無人員'}</td>
+                <td className={styles.checkboxCell} onClick={() => toggleConfirm(index, 'checker')}>
+                  <div className={`${styles.checkbox} ${schedule.checkerConfirmed ? styles.checked : ''}`}>
+                    {schedule.checkerConfirmed ? '✓' : ''}
+                  </div>
+                </td>
+                <td>
+                  {schedule.userBooked ? (
+                    <span className={styles.bookedTag}>已預約 ({schedule.userBooked.name})</span>
+                  ) : !schedule.operatorName ? (
+                    <span className={styles.waitingTag}>待安排雷切機管理員</span>
+                  ) : (
+                    <Link href={`/booking?date=${schedule.date}`} className={styles.bookLink}>
+                      可預約
+                    </Link>
+                  )}
+                </td>
+                {isAdmin && (
+                  <td className={styles.actionCell}>
+                    <Link href={`/admin/schedule?edit=true&id=${schedule._id}`} className={styles.editLink}>
+                      編輯
+                    </Link>
+                    <button 
+                      onClick={() => handleDeleteSchedule(schedule._id)} 
+                      className={styles.deleteButton}
+                    >
+                      刪除
+                    </button>
                   </td>
-                  <td>{schedule.checkerName || '尚無人員'}</td>
-                  <td className={styles.checkboxCell} onClick={() => toggleConfirm(index, 'checker')}>
-                    <div className={`${styles.checkbox} ${schedule.checkerConfirmed ? styles.checked : ''}`}>
-                      {schedule.checkerConfirmed ? '✓' : ''}
-                    </div>
-                  </td>
-                  <td>
-                                      {schedule.userBooked ? (
-                      <span className={styles.bookedTag}>已預約 ({schedule.userBooked.name})</span>
-                    ) : !schedule.operatorName ? (
-                      <span className={styles.waitingTag}>待安排雷切機管理員</span>
-                    ) : (
-                      <Link href={`/booking?date=${schedule.date}`} className={styles.bookLink}>
-                        可預約
-                      </Link>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                )}
+              </tr>
+            ))}
               
               {/* 未排班時段 - 只有管理員可見 */}
               {isAdmin && availableDates.map((date, index) => (

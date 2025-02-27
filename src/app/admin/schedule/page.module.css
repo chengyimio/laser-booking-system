@@ -198,6 +198,16 @@
     padding: 2rem 0;
     background-color: #f9f9f9;
   }
+  .customDateToggle {
+    margin-top: 0.5rem;
+    background: none;
+    border: none;
+    color: #9c27b0;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: block;
+  }
   
   @media (max-width: 600px) {
     .formActions {
