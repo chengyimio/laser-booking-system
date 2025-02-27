@@ -83,6 +83,7 @@ export default function Home() {
       alert('刪除時發生錯誤');
     }
   };
+  
   const toggleConfirm = async (index, type) => {
     if (!isAdmin) return;
     
@@ -123,16 +124,46 @@ export default function Home() {
     }
   };
 
-  // 簡易登入功能（在真實應用中會使用更安全的方法）
+// 添加刪除預約功能
+  const handleDeleteBooking = async (scheduleId) => {
+    if (!confirm('確定要刪除此預約嗎？')) return;
+    
+    try {
+      const response = await fetch(`/api/bookings/cancel?id=${scheduleId}`, {
+        method: 'POST',
+      });
+      
+      if (response.ok) {
+        // 更新UI，移除預約信息
+        const updatedSchedules = schedules.map(schedule => {
+          if (schedule._id === scheduleId) {
+            return { ...schedule, userBooked: null };
+          }
+          return schedule;
+        });
+        
+        setSchedules(updatedSchedules);
+        alert('預約已成功取消');
+      } else {
+        const error = await response.json();
+        alert(`取消失敗: ${error.message || '未知錯誤'}`);
+      }
+    } catch (error) {
+      console.error('取消預約錯誤:', error);
+      alert('取消預約時發生錯誤');
+    }
+  };
+
+  // 修改登入功能使用密碼
   const handleAdminLogin = () => {
-    const name = prompt('請輸入管理員姓名:');
-    if (name) {
+    const password = prompt('請輸入管理員密碼:');
+    if (password === 'ipta78802') { // 這裡設置您的管理員密碼
       setIsLoggedIn(true);
       setIsAdmin(true);
-      setCurrentManager(name);
-      
-      // 在真實應用中，這裡會驗證管理員身份
-      localStorage.setItem('admin', name); // 簡單儲存登入狀態
+      setCurrentManager('管理員');
+      localStorage.setItem('admin', 'true'); // 儲存登入狀態
+    } else {
+      alert('密碼錯誤');
     }
   };
 
@@ -146,10 +177,10 @@ export default function Home() {
   // 檢查之前的登入狀態
   useEffect(() => {
     const savedAdmin = localStorage.getItem('admin');
-    if (savedAdmin) {
+    if (savedAdmin === 'true') {
       setIsLoggedIn(true);
       setIsAdmin(true);
-      setCurrentManager(savedAdmin);
+      setCurrentManager('管理員');
     }
   }, []);
 
@@ -235,15 +266,25 @@ export default function Home() {
                   </div>
                 </td>
                 <td>
-                  {schedule.userBooked ? (
+                {schedule.userBooked ? (
+                  <div className={styles.bookedInfo}>
                     <span className={styles.bookedTag}>已預約 ({schedule.userBooked.name})</span>
-                  ) : !schedule.operatorName ? (
-                    <span className={styles.waitingTag}>待安排雷切機管理員</span>
-                  ) : (
-                    <Link href={`/booking?date=${schedule.date}`} className={styles.bookLink}>
-                      可預約
-                    </Link>
-                  )}
+                    {isAdmin && (
+                      <button 
+                        onClick={() => handleDeleteBooking(schedule._id)} 
+                        className={styles.cancelBookingButton}
+                      >
+                        取消預約
+                      </button>
+                    )}
+                  </div>
+                ) : !schedule.operatorName ? (
+                  <span className={styles.waitingTag}>待安排雷切機管理員</span>
+                ) : (
+                  <Link href={`/booking?date=${schedule.date}`} className={styles.bookLink}>
+                    可預約
+                  </Link>
+                )}
                 </td>
                 {isAdmin && (
                   <td className={styles.actionCell}>

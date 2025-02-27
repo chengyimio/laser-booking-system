@@ -208,6 +208,28 @@
     font-size: 0.9rem;
     display: block;
   }
+  .loading {
+    text-align: center;
+    padding: 2rem;
+  }
+  
+  .unauthorizedMessage {
+    text-align: center;
+    padding: 2rem;
+    background-color: #f8d7da;
+    border-radius: 8px;
+    color: #721c24;
+  }
+  
+  .homeLink {
+    display: inline-block;
+    margin-top: 1rem;
+    background-color: #9c27b0;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    text-decoration: none;
+  }
   
   @media (max-width: 600px) {
     .formActions {

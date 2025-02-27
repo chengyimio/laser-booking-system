@@ -5,9 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import styles from './page.module.css';
 
-// 移除 MongoDB 導入
-// import { ObjectId } from 'mongodb'; // ← 刪除這一行
-
 // 創建一個包含 useSearchParams 的組件
 function ScheduleForm({ onDateSelected, onScheduleIdLoaded }) {
   const searchParams = useSearchParams();
@@ -34,6 +31,19 @@ export default function AdminSchedulePage() {
   const [editScheduleId, setEditScheduleId] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isCustomDate, setIsCustomDate] = useState(false);
+  
+  // 添加權限檢查
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  
+  // 檢查管理員登入狀態
+  useEffect(() => {
+    const savedAdmin = localStorage.getItem('admin');
+    if (savedAdmin === 'true') {
+      setIsAuthorized(true);
+    }
+    setIsCheckingAuth(false);
+  }, []);
   
   const [formData, setFormData] = useState({
     date: '',
@@ -177,6 +187,33 @@ export default function AdminSchedulePage() {
     }
   };
 
+  // 顯示加載中狀態
+  if (isCheckingAuth) {
+    return (
+      <div className={styles.container}>
+        <main className={styles.main}>
+          <div className={styles.loading}>檢查權限中...</div>
+        </main>
+      </div>
+    );
+  }
+
+  // 顯示未授權訊息
+  if (!isAuthorized) {
+    return (
+      <div className={styles.container}>
+        <main className={styles.main}>
+          <div className={styles.unauthorizedMessage}>
+            <h2>未授權訪問</h2>
+            <p>您沒有權限訪問此頁面</p>
+            <Link href="/" className={styles.homeLink}>返回首頁</Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // 正常渲染授權用戶可見的內容
   return (
     <div className={styles.container}>
       <Suspense fallback={null}>
