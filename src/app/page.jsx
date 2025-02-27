@@ -214,10 +214,10 @@ export default function Home() {
                     </div>
                   </td>
                   <td>
-                    {schedule.userBooked ? (
+                                      {schedule.userBooked ? (
                       <span className={styles.bookedTag}>已預約 ({schedule.userBooked.name})</span>
-                    ) : !schedule.checkerName ? (
-                      <span className={styles.waitingTag}>待安排檢查人員</span>
+                    ) : !schedule.operatorName ? (
+                      <span className={styles.waitingTag}>待安排雷切機管理員</span>
                     ) : (
                       <Link href={`/booking?date=${schedule.date}`} className={styles.bookLink}>
                         可預約

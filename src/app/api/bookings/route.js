@@ -65,13 +65,12 @@ async function handleBookingRequest(data, schedules) {
     );
   }
   
-  // 查找可預約的時段
-  const schedule = await schedules.findOne({
-    date: date,
-    operatorName: { $ne: '' },
-    checkerName: { $ne: '' },
-    userBooked: null
-  });
+    // 查找可預約的時段
+    const schedule = await schedules.findOne({
+      date: date,
+      operatorName: { $ne: '' }, // 只需要雷切機管理員
+      userBooked: null
+    });
   
   if (!schedule) {
     return Response.json(
